@@ -75,12 +75,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <input type="password" name="password" required><br><br>
 
         <button type="submit">Login</button>
-        </br>
-        </br>
-        </br>
-        </br>
-        <a href="register.php" class="login-btn">Register</a>
-
+        
+        <div class="links">
+            <a href="change_password.php" class="forgot-password">Forgot Password?</a>
+            <a href="register.php" class="register-link">Register</a>
+        </div>
     </form>
 
     <p><?= $msg ?></p>

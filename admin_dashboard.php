@@ -15,10 +15,27 @@ $current_page = basename($_SERVER['PHP_SELF']);
 // Handle user deletion
 if (isset($_POST['delete_user'])) {
     $user_id = $_POST['user_id'];
+
+    // First, delete reviews by this user
+    $sql = "DELETE FROM reviews WHERE user_id = ?";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("i", $user_id);
+    $stmt->execute();
+    $stmt->close();
+
+    // Then, delete complaints by this user
+    $sql = "DELETE FROM complaints WHERE user_id = ?";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("i", $user_id);
+    $stmt->execute();
+    $stmt->close();
+
+    // Now, delete the user
     $sql = "DELETE FROM users WHERE user_id = ?";
     $stmt = $conn->prepare($sql);
     $stmt->bind_param("i", $user_id);
     $stmt->execute();
+    $stmt->close();
 }
 
 // Handle department deletion
