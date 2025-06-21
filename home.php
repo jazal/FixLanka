@@ -44,12 +44,13 @@ if (isset($_SESSION['message'])) {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>FixLanka</title>
-  <link rel="stylesheet" href="css/home.css">
+  <link rel="stylesheet" href="/FixLanka/css/home.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 <body>
   <!-- Navbar -->
@@ -176,6 +177,48 @@ if (isset($_SESSION['message'])) {
       </div>
       <a href="review.php" class="btn">Review</a>
     </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer-container">
+        <div class="footer-about">
+            <img src="uploads/logos/FIXLANKA_LOGO.png" alt="FixLanka Logo" class="footer-logo">
+            <p>FixLanka is a platform dedicated to helping citizens report public infrastructure issues to the relevant authorities quickly and easily.</p>
+        </div>
+        <div class="footer-links">
+            <h4>Quick Links</h4>
+            <ul>
+                <li><a href="#">Home</a></li>
+                <li><a href="#how">How it Works</a></li>
+                <li><a href="#departments">Departments</a></li>
+                <li><a href="#reviews">Reviews</a></li>
+                <?php if (isset($_SESSION['user_id'])): ?>
+                  <li><a href="my_complaints.php">My Complaints</a></li>
+                <?php else: ?>
+                  <li><a href="login.php">Login</a></li>
+                  <li><a href="register.php">Register</a></li>
+                <?php endif; ?>
+            </ul>
+        </div>
+        <div class="footer-contact">
+            <h4>Contact Us</h4>
+            <p><i class="fas fa-map-marker-alt"></i> 123, Galle Road, Colombo 03, Sri Lanka</p>
+            <p><i class="fas fa-envelope"></i> Email: support@fixlanka.lk</p>
+            <p><i class="fas fa-phone"></i> Phone: +94 11 123 4567</p>
+        </div>
+        <div class="footer-social">
+            <h4>Follow Us</h4>
+            <div class="social-icons">
+                <a href="#"><i class="fab fa-facebook-f"></i></a>
+                <a href="#"><i class="fab fa-twitter"></i></a>
+                <a href="#"><i class="fab fa-instagram"></i></a>
+            </div>
+        </div>
+    </div>
+    <div class="footer-bottom">
+        <p>&copy; 2024 FixLanka. All Rights Reserved.</p>
+    </div>
+  </footer>
 
   <!-- Swiper JS Init -->
   <script>
