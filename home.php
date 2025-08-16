@@ -3,6 +3,40 @@ session_start();
 include 'includes/dbconnect.php'; // your DB connection
 $message = "";
 
+$userProfilePic = 'uploads/default_profile.png'; // Default profile picture
+
+// If user is logged in, fetch their profile picture
+if (isset($_SESSION['user_id'])) {
+    $userId = $_SESSION['user_id'];
+    $stmt_user = $conn->prepare("SELECT profile_picture FROM users WHERE user_id = ?");
+    if ($stmt_user) {
+        $stmt_user->bind_param("i", $userId);
+        $stmt_user->execute();
+        $result_user = $stmt_user->get_result();
+        if ($user = $result_user->fetch_assoc()) {
+            if (!empty($user['profile_picture'])) {
+                $profilePath = $user['profile_picture'];
+                
+                // Handle different path formats for backward compatibility
+                if (strpos($profilePath, 'Includes/citizen/') === 0) {
+                    // New format: already has full path
+                    $userProfilePic = $profilePath;
+                } elseif (strpos($profilePath, 'uploads/') === 0) {
+                    // Old format: add citizen path
+                    $userProfilePic = 'Includes/citizen/' . $profilePath;
+                } elseif (strpos($profilePath, '/') === false) {
+                    // Just filename: add full path
+                    $userProfilePic = 'Includes/citizen/uploads/' . $profilePath;
+                } else {
+                    // Use as is for other formats
+                    $userProfilePic = $profilePath;
+                }
+            }
+        }
+        $stmt_user->close();
+    }
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   $ref_number = trim($_POST['ref_number']);
 
@@ -44,13 +78,108 @@ if (isset($_SESSION['message'])) {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>FixLanka</title>
-  <link rel="stylesheet" href="/FixLanka/css/home.css">
+  <link rel="stylesheet" href="home.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css"/>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    /* Profile Picture Modal Styles */
+    .profile-modal {
+      display: none;
+      position: fixed;
+      z-index: 9999;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.8);
+      animation: fadeIn 0.3s ease-in-out;
+    }
+
+    .profile-modal.show {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .profile-modal-content {
+      position: relative;
+      background: white;
+      padding: 20px;
+      border-radius: 15px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+      max-width: 500px;
+      max-height: 80vh;
+      animation: slideIn 0.3s ease-in-out;
+    }
+
+    .profile-modal-image {
+      width: 100%;
+      height: auto;
+      max-width: 400px;
+      max-height: 400px;
+      border-radius: 10px;
+      object-fit: cover;
+      display: block;
+      margin: 0 auto;
+    }
+
+    .profile-modal-close {
+      position: absolute;
+      top: 10px;
+      right: 15px;
+      color: #aaa;
+      font-size: 28px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: color 0.3s;
+    }
+
+    .profile-modal-close:hover,
+    .profile-modal-close:focus {
+      color: #000;
+    }
+
+    .nav-profile-pic {
+      cursor: pointer;
+      transition: transform 0.2s ease-in-out;
+    }
+
+    .nav-profile-pic:hover {
+      transform: scale(1.1);
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes slideIn {
+      from { 
+        opacity: 0;
+        transform: scale(0.7) translateY(-50px);
+      }
+      to { 
+        opacity: 1;
+        transform: scale(1) translateY(0);
+      }
+    }
+
+    @media (max-width: 768px) {
+      .profile-modal-content {
+        margin: 20px;
+        max-width: calc(100% - 40px);
+      }
+      
+      .profile-modal-image {
+        max-width: 300px;
+        max-height: 300px;
+      }
+    }
+  </style>
 </head>
 <body>
   <!-- Navbar -->
@@ -68,11 +197,14 @@ if (isset($_SESSION['message'])) {
         <li><a href="#departments">Departments</a></li>
         <li><a href="#reviews">Reviews</a></li>
         <?php if (isset($_SESSION['user_id'])): ?>
+          <li><a href="Includes/citizen/my_complaints.php">My Complaints</a></li>
+          <li><a href="Includes/logout.php">Logout</a></li>
           <li>
-            <a href="logout.php">Logout</a>
+            <img src="<?php echo htmlspecialchars($userProfilePic); ?>" alt="Profile" class="nav-profile-pic" onclick="openProfileModal('<?php echo htmlspecialchars($userProfilePic); ?>')">
           </li>
         <?php else: ?>
-          <li><a href="login.php" class="login-btn">Login</a></li>
+          <li><a href="Includes/login.php">Login</a></li>
+          <li><a href="Includes/citizen/register.php" class="login-btn">Register</a></li>
         <?php endif; ?>
       </ul>
     </nav>
@@ -84,9 +216,9 @@ if (isset($_SESSION['message'])) {
       <h1 class="main-title">REPORT PUBLIC PROBLEMS FASTLY</h1>
       <p class="main-subtitle">Click to Pick. Snap to Fix!</p>
       <?php if (isset($_SESSION['user_id'])): ?>
-        <a href="submit_complaint.php" class="btn">Report an Issue</a>
+        <a href="Includes/citizen/submit_complaint.php" class="btn">Report an Issue</a>
       <?php else: ?>
-        <a href="login.php" class="btn">Report an Issue</a>
+        <a href="Includes/login.php" class="btn">Report an Issue</a>
       <?php endif; ?>
       <form class="ref-check" method="POST">
         <input type="text" name="ref_number" placeholder="Enter Complain Reference Number" required>
@@ -108,7 +240,7 @@ if (isset($_SESSION['message'])) {
     </div>
 
 
-    <a href="register.php" class="btn">Register</a>
+    <a href="Includes/citizen/register.php" class="btn">Register</a>
   </section>
 
   <!-- Departments Carousel -->
@@ -147,7 +279,21 @@ if (isset($_SESSION['message'])) {
           $result = $conn->query($sql);
           if ($result && $result->num_rows > 0) {
               while ($row = $result->fetch_assoc()) {
-                  $profilePic = !empty($row['profile_picture']) ? $row['profile_picture'] : 'uploads/default_profile.png';
+                  // Handle profile picture path for reviews
+                  if (!empty($row['profile_picture'])) {
+                      $profilePath = $row['profile_picture'];
+                      if (strpos($profilePath, 'Includes/citizen/') === 0) {
+                          $profilePic = $profilePath;
+                      } elseif (strpos($profilePath, 'uploads/') === 0) {
+                          $profilePic = 'Includes/citizen/' . $profilePath;
+                      } elseif (strpos($profilePath, '/') === false) {
+                          $profilePic = 'Includes/citizen/uploads/' . $profilePath;
+                      } else {
+                          $profilePic = $profilePath;
+                      }
+                  } else {
+                      $profilePic = 'uploads/default_profile.png';
+                  }
                   echo '<div class="swiper-slide review-card">';
                   echo '<div class="review-header">';
                   echo '<img src="' . htmlspecialchars($profilePic) . '" alt="Profile Picture" class="profile-pic" />';
@@ -173,9 +319,12 @@ if (isset($_SESSION['message'])) {
           }
           ?>
         </div>
+        </br>
+        </br>  
         <div class="swiper-pagination"></div>
       </div>
-      <a href="review.php" class="btn">Review</a>
+      </br> 
+      <a href="Includes/citizen/review.php" class="btn">Review</a>
     </section>
 
   <!-- Footer -->
@@ -193,10 +342,10 @@ if (isset($_SESSION['message'])) {
                 <li><a href="#departments">Departments</a></li>
                 <li><a href="#reviews">Reviews</a></li>
                 <?php if (isset($_SESSION['user_id'])): ?>
-                  <li><a href="my_complaints.php">My Complaints</a></li>
+                  <li><a href="Includes/citizen/my_complaints.php">My Complaints</a></li>
                 <?php else: ?>
-                  <li><a href="login.php">Login</a></li>
-                  <li><a href="register.php">Register</a></li>
+                  <li><a href="Includes/login.php">Login</a></li>
+                  <li><a href="Includes/citizen/register.php">Register</a></li>
                 <?php endif; ?>
             </ul>
         </div>
@@ -216,12 +365,54 @@ if (isset($_SESSION['message'])) {
         </div>
     </div>
     <div class="footer-bottom">
-        <p>&copy; 2024 FixLanka. All Rights Reserved.</p>
+        <p>&copy; 2025 FixLanka. All Rights Reserved.</p>
     </div>
   </footer>
 
+  <!-- Profile Picture Modal -->
+  <div id="profileModal" class="profile-modal">
+    <div class="profile-modal-content">
+      <span class="profile-modal-close" onclick="closeProfileModal()">&times;</span>
+      <img id="profileModalImage" class="profile-modal-image" src="" alt="Profile Picture">
+    </div>
+  </div>
+
   <!-- Swiper JS Init -->
   <script>
+    // Profile Picture Modal Functions
+    function openProfileModal(imageSrc) {
+      const modal = document.getElementById('profileModal');
+      const modalImage = document.getElementById('profileModalImage');
+      
+      modalImage.src = imageSrc;
+      modal.classList.add('show');
+      
+      // Prevent body scrolling when modal is open
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeProfileModal() {
+      const modal = document.getElementById('profileModal');
+      modal.classList.remove('show');
+      
+      // Restore body scrolling
+      document.body.style.overflow = 'auto';
+    }
+
+    // Close modal when clicking outside the image
+    document.getElementById('profileModal').addEventListener('click', function(e) {
+      if (e.target === this) {
+        closeProfileModal();
+      }
+    });
+
+    // Close modal with Escape key
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        closeProfileModal();
+      }
+    });
+
     const deptSwiper = new Swiper('.department-swiper', {
       loop: true,
       autoplay: { delay: 2500 },
