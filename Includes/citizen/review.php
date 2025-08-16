@@ -5,7 +5,7 @@ include '../dbconnect.php';
 $message = "";
 
 if (!isset($_SESSION['user_id'])) {
-    header("Location: login.php");
+    header("Location: ../login.php");
     exit();
 }
 
@@ -79,33 +79,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Update Your Reviews - FixLanka</title>
   <link rel="stylesheet" href="citizen.css" />
-  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 <body>
   <div class="review-container">
     <h1>UPDATE YOUR REVIEWS</h1>
+    <?php if ($message): ?>
+      <div class="message"><?php echo htmlspecialchars($message); ?></div>
+    <?php endif; ?>
     <form method="POST" enctype="multipart/form-data" class="review-form">
       <label for="ref_number">Complain Ref.No</label>
       <input type="text" id="ref_number" name="ref_number" required />
-
+    
       <div class="pictures">
         <div class="picture-upload">
+          
           <label for="before_picture">Before picture</label>
-          <label class="custom-file-label">
-            <svg viewBox="0 0 20 20"><path d="M16.88 9.94a1 1 0 0 0-1.41 0l-2.47 2.47V4a1 1 0 1 0-2 0v8.41l-2.47-2.47a1 1 0 1 0-1.41 1.41l4.24 4.24a1 1 0 0 0 1.41 0l4.24-4.24a1 1 0 0 0 0-1.41z"/></svg>
-            <span>Select Before Image</span>
-            <input type="file" id="before_picture" name="before_picture" accept="image/*" required onchange="showFileName(this, 'before-file-name')" />
-          </label>
-          <span class="selected-file" id="before-file-name"></span>
+          <input type="file" id="before_picture" name="before_picture" accept="image/*" required />
         </div>
         <div class="picture-upload">
           <label for="after_picture">After picture</label>
-          <label class="custom-file-label">
-            <svg viewBox="0 0 20 20"><path d="M16.88 9.94a1 1 0 0 0-1.41 0l-2.47 2.47V4a1 1 0 1 0-2 0v8.41l-2.47-2.47a1 1 0 1 0-1.41 1.41l4.24 4.24a1 1 0 0 0 1.41 0l4.24-4.24a1 1 0 0 0 0-1.41z"/></svg>
-            <span>Select After Image</span>
-            <input type="file" id="after_picture" name="after_picture" accept="image/*" required onchange="showFileName(this, 'after-file-name')" />
-          </label>
-          <span class="selected-file" id="after-file-name"></span>
+          <input type="file" id="after_picture" name="after_picture" accept="image/*" required />
         </div>
       </div>
 
@@ -116,25 +109,5 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       <button type="button" class="home-btn" onclick="window.location.href='home.php'">Return to Home</button>
     </form>
   </div>
-  <?php if ($message): ?>
-    <script>
-      Swal.fire({
-        icon: '<?php echo (strpos($message, "successfully") !== false) ? "success" : "error"; ?>',
-        title: '<?php echo (strpos($message, "successfully") !== false) ? "Success" : "Error"; ?>',
-        text: '<?php echo htmlspecialchars($message); ?>',
-        confirmButtonText: 'OK'
-      });
-    </script>
-  <?php endif; ?>
-  <script>
-  function showFileName(input, spanId) {
-    const span = document.getElementById(spanId);
-    if (input.files && input.files[0]) {
-      span.textContent = input.files[0].name;
-    } else {
-      span.textContent = '';
-    }
-  }
-  </script>
 </body>
 </html>
