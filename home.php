@@ -3,7 +3,7 @@ session_start();
 include 'includes/dbconnect.php'; // your DB connection
 $message = "";
 
-$userProfilePic = 'uploads/default_profile.png'; // Default profile picture
+$userProfilePic = ''; // No default - user must have profile picture
 
 // If user is logged in, fetch their profile picture
 if (isset($_SESSION['user_id'])) {
@@ -15,22 +15,8 @@ if (isset($_SESSION['user_id'])) {
         $result_user = $stmt_user->get_result();
         if ($user = $result_user->fetch_assoc()) {
             if (!empty($user['profile_picture'])) {
-                $profilePath = $user['profile_picture'];
-                
-                // Handle different path formats for backward compatibility
-                if (strpos($profilePath, 'Includes/citizen/') === 0) {
-                    // New format: already has full path
-                    $userProfilePic = $profilePath;
-                } elseif (strpos($profilePath, 'uploads/') === 0) {
-                    // Old format: add citizen path
-                    $userProfilePic = 'Includes/citizen/' . $profilePath;
-                } elseif (strpos($profilePath, '/') === false) {
-                    // Just filename: add full path
-                    $userProfilePic = 'Includes/citizen/uploads/' . $profilePath;
-                } else {
-                    // Use as is for other formats
-                    $userProfilePic = $profilePath;
-                }
+                // Use the path exactly as stored in database
+                $userProfilePic = $user['profile_picture'];
             }
         }
         $stmt_user->close();
@@ -199,9 +185,11 @@ if (isset($_SESSION['message'])) {
         <?php if (isset($_SESSION['user_id'])): ?>
           <li><a href="Includes/citizen/my_complaints.php">My Complaints</a></li>
           <li><a href="Includes/logout.php">Logout</a></li>
+          <?php if (!empty($userProfilePic)): ?>
           <li>
             <img src="<?php echo htmlspecialchars($userProfilePic); ?>" alt="Profile" class="nav-profile-pic" onclick="openProfileModal('<?php echo htmlspecialchars($userProfilePic); ?>')">
           </li>
+          <?php endif; ?>
         <?php else: ?>
           <li><a href="Includes/login.php">Login</a></li>
           <li><a href="Includes/citizen/register.php" class="login-btn">Register</a></li>
@@ -279,24 +267,13 @@ if (isset($_SESSION['message'])) {
           $result = $conn->query($sql);
           if ($result && $result->num_rows > 0) {
               while ($row = $result->fetch_assoc()) {
-                  // Handle profile picture path for reviews
-                  if (!empty($row['profile_picture'])) {
-                      $profilePath = $row['profile_picture'];
-                      if (strpos($profilePath, 'Includes/citizen/') === 0) {
-                          $profilePic = $profilePath;
-                      } elseif (strpos($profilePath, 'uploads/') === 0) {
-                          $profilePic = 'Includes/citizen/' . $profilePath;
-                      } elseif (strpos($profilePath, '/') === false) {
-                          $profilePic = 'Includes/citizen/uploads/' . $profilePath;
-                      } else {
-                          $profilePic = $profilePath;
-                      }
-                  } else {
-                      $profilePic = 'uploads/default_profile.png';
-                  }
+                  // Use profile picture path as stored in database
+                  $profilePic = !empty($row['profile_picture']) ? $row['profile_picture'] : '';
                   echo '<div class="swiper-slide review-card">';
                   echo '<div class="review-header">';
-                  echo '<img src="' . htmlspecialchars($profilePic) . '" alt="Profile Picture" class="profile-pic" />';
+                  if (!empty($profilePic)) {
+                      echo '<img src="' . htmlspecialchars($profilePic) . '" alt="Profile Picture" class="profile-pic" />';
+                  }
                   echo '<h3 class="reviewer-name">' . htmlspecialchars($row['name']) . '</h3>';
                   echo '</div>';
                   echo '<div class="review-content">';

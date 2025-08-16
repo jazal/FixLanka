@@ -6,8 +6,8 @@ if (!isset($_SESSION['user_id'])) {
 }
 include('../dbconnect.php');
 
-// Check if user is logged in and is an admin
-if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
+// Check if user is logged in and is a citizen
+if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'citizen') {
     header("Location: ../unauthorized.php");
     exit();
 }
@@ -23,6 +23,20 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $description = $_POST['description'];
     $latitude = $_POST['latitude'];
     $longitude = $_POST['longitude'];
+    
+    // Validate that department is selected and exists
+    if (empty($dept_id)) {
+        $msg = "❌ Please select a department.";
+    } else {
+        // Check if the department exists and is active
+        $dept_check = $conn->prepare("SELECT dept_id FROM departments WHERE dept_id = ? AND status = 'active'");
+        $dept_check->bind_param("i", $dept_id);
+        $dept_check->execute();
+        $dept_result = $dept_check->get_result();
+        
+        if ($dept_result->num_rows === 0) {
+            $msg = "❌ Invalid department selected. Please choose a valid department.";
+        } else {
 
     $media_path = "";
     if (!empty($_FILES['media']['name'])) {
@@ -32,7 +46,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         if (!is_dir($upload_dir)) {
             mkdir($upload_dir, 0755, true);
         }
-        $media_path = "uploads/" . $file_name;
+        // Store full web-accessible path for proper display
+        $media_path = "Includes/citizen/uploads/" . $file_name;
         move_uploaded_file($file_tmp, $upload_dir . $file_name);
     }
 
@@ -44,7 +59,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     if ($stmt->execute()) {
         $msg = "✅ Complaint submitted successfully!";
     } else {
-        $msg = "❌ Error: " . $conn->error;
+        // More detailed error message for debugging
+        $error_details = "Database Error: " . $conn->error;
+        $error_details .= "<br>Department ID: " . $dept_id;
+        $error_details .= "<br>User ID: " . $user_id;
+        $msg = "❌ Error submitting complaint.<br>" . $error_details;
+    }
+        }
     }
 }
 
@@ -132,6 +153,36 @@ $departments = $conn->query("SELECT * FROM departments WHERE status = 'active'")
                 alert("Geolocation is not supported by your browser.");
             }
         }
+        
+        // Form validation before submission
+        document.querySelector('form').addEventListener('submit', function(e) {
+            const department = document.getElementById('department').value;
+            const title = document.getElementById('title').value.trim();
+            const description = document.getElementById('description').value.trim();
+            
+            // Check if department is selected
+            if (!department || department === '') {
+                alert('❌ Please select a department before submitting.');
+                e.preventDefault();
+                return false;
+            }
+            
+            // Check if title is provided
+            if (!title) {
+                alert('❌ Please enter a complaint title.');
+                e.preventDefault();
+                return false;
+            }
+            
+            // Check if description is provided
+            if (!description) {
+                alert('❌ Please enter a description for your complaint.');
+                e.preventDefault();
+                return false;
+            }
+            
+            return true;
+        });
     </script>
 </body>
 </html>
