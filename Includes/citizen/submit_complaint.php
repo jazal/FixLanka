@@ -6,6 +6,13 @@ if (!isset($_SESSION['user_id'])) {
 }
 include('../dbconnect.php');
 
+// Check if user is logged in and is an admin
+if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
+    header("Location: ../unauthorized.php");
+    exit();
+}
+
+
 $msg = "";
 
 // Handle form submission
@@ -25,8 +32,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         if (!is_dir($upload_dir)) {
             mkdir($upload_dir, 0755, true);
         }
-        // Store relative path from the citizen folder for proper web access
-        $media_path = "Includes/citizen/uploads/" . $file_name;
+        $media_path = "uploads/" . $file_name;
         move_uploaded_file($file_tmp, $upload_dir . $file_name);
     }
 

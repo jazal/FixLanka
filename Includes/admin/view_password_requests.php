@@ -3,6 +3,12 @@ session_start();
 include('../dbconnect.php');
 $alert = "";
 
+// Check if user is logged in and is an admin
+if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
+    header("Location: ../unauthorized.php");
+    exit();
+}
+
 // Ensure 'read' column exists (run this only once, then comment out)
 // $conn->query("ALTER TABLE password_reset_requests ADD COLUMN `read` TINYINT(1) DEFAULT 0");
 
@@ -44,7 +50,6 @@ $result = $conn->query("SELECT r.id, r.username, r.email, r.description, r.reque
     <div class="admin-content-container">
         <h2 class="admin-title">Password Reset Requests</h2>
         <div class="admin-btn-row">
-            <a href="../../home.php" class="admin-btn admin-btn-secondary">Back to Home</a>
             <a href="admin_dashboard.php" class="admin-btn admin-btn-secondary">Back to Admin Dashboard</a>
             <a href="change_user_password.php" class="admin-btn">Update Password Panel</a>
         </div>
